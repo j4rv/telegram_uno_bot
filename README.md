@@ -1,5 +1,6 @@
 # UNO Bot
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/0d29a306f9ea4fbc94a2a28f9f52141c)](https://www.codacy.com/app/J4RV/mau_mau_bot?utm_source=github.com&utm_medium=referral&utm_content=J4RV/mau_mau_bot&utm_campaign=badger)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](./LICENSE)
 
 Telegram Bot that allows you to play the popular card game UNO via inline queries. The bot currently runs as [@unobot](http://telegram.me/unobot).
