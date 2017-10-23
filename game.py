@@ -21,6 +21,8 @@
 import logging
 import json
 from datetime import datetime
+
+from gameplay_config import DEFAULT_GAMEMODE
 from deck import Deck
 import card as c
 
@@ -33,7 +35,7 @@ class Game(object):
     draw_counter = 0
     players_won = 0
     starter = None
-    mode = 'classic'
+    mode = DEFAULT_GAMEMODE
     job = None
     with open("config.json","r") as f:
         config = json.loads(f.read())
@@ -91,10 +93,14 @@ class Game(object):
     def _first_card_(self):
         # In case that the player did not select a game mode
         if not self.deck.cards:
-            self.set_mode("classic")
+            self.set_mode(DEFAULT_GAMEMODE)
 
+        # The first card should not be a special card
         while not self.last_card or self.last_card.special:
             self.last_card = self.deck.draw()
+            # If the card drawn was special, return it to the deck and loop again
+            if self.last_card.special:
+                self.deck.dismiss(self.last_card)
 
         self.play_card(self.last_card)
 
@@ -128,7 +134,6 @@ class Game(object):
             self.turn()
         else:
             self.logger.debug("Choosing Color...")
-            self.logger.info("Played special card with hand: {hand}".format(hand=self.current_player.cards))
             self.choosing_color = True
 
     def choose_color(self, color):

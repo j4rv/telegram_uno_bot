@@ -1,23 +1,20 @@
+import random
+
 import logging
+
 import card as c
 from datetime import datetime
-from secrets import randbelow
 
 from telegram import Message, Chat
 
+from gameplay_config import TIME_REMOVAL_AFTER_SKIP, MIN_FAST_TURN_TIME
 from errors import DeckEmptyError, NotEnoughPlayersError
 from internationalization import __, _
 from shared_vars import gm, botan
 from user_setting import UserSetting
 from utils import send_async, display_name, game_is_running
 
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-    ,filename='log.log'
-)
 logger = logging.getLogger(__name__)
-
 
 class Countdown(object):
     player = None
@@ -37,7 +34,10 @@ def do_skip(bot, player, job_queue=None):
 
     if skipped_player.waiting_time > 0:
         skipped_player.anti_cheat += 1
-        skipped_player.waiting_time -= 20
+        skipped_player.waiting_time -= TIME_REMOVAL_AFTER_SKIP
+        if (skipped_player.waiting_time < 0):
+            skipped_player.waiting_time = 0
+
         try:
             skipped_player.draw()
         except DeckEmptyError:
@@ -61,8 +61,8 @@ def do_skip(bot, player, job_queue=None):
         try:
             gm.leave_game(skipped_player.user, chat)
             send_async(bot, chat.id,
-                       text="{name1} was skipped four times in a row "
-                            "and has been removed from the game.\n"
+                       text="{name1} ran out of time "
+                            "and has been removed from the game!\n"
                             "Next player: {name2}"
                        .format(name1=display_name(skipped_player.user),
                                name2=display_name(next_player.user)))
@@ -73,8 +73,8 @@ def do_skip(bot, player, job_queue=None):
 
         except NotEnoughPlayersError:
             send_async(bot, chat.id,
-                       text="{name} was skipped four times in a row "
-                               "and has been removed from the game.\n"
+                       text="{name} ran out of time "
+                               "and has been removed from the game!\n"
                                "The game ended."
                        .format(name=display_name(skipped_player.user)))
 
@@ -129,7 +129,7 @@ def do_play_card(bot, player, result_id):
             gm.end_game(chat, user)
 
     if botan:
-        random_int = randbelow(999999999) + 1
+        random_int = random.randrange(1, 999999999)
         botan.track(Message(random_int, user, datetime.now(),
                             Chat(chat.id, 'group')),
                     'Played cards')
@@ -191,8 +191,9 @@ def do_call_bluff(bot, player):
 def start_player_countdown(bot, game, job_queue):
     player = game.current_player
     time = player.waiting_time
-    if time == 0:
-        time = 15
+
+    if time < MIN_FAST_TURN_TIME:
+        time = MIN_FAST_TURN_TIME
 
     if game.mode == 'fast':
         if game.job:

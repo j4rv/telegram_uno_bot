@@ -18,6 +18,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import json
+
+import logging
 from telegram.ext import Updater
 from telegram.contrib.botan import Botan
 

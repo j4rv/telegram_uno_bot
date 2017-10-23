@@ -30,6 +30,7 @@ import card as c
 import settings
 import simple_commands
 from actions import do_skip, do_play_card, do_draw, do_call_bluff, start_player_countdown
+from gameplay_config import WAITING_TIME, DEFAULT_GAMEMODE, MIN_PLAYERS
 from errors import (NoGameInChatError, LobbyClosedError, AlreadyJoinedError,
                     NotEnoughPlayersError, DeckEmptyError)
 from internationalization import _, __, user_locale, game_locales
@@ -46,10 +47,8 @@ from utils import send_async, answer_async, error, TIMEOUT, user_is_creator_or_a
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
-    ,filename='log.log'
 )
 logger = logging.getLogger(__name__)
-
 
 @user_locale
 def notify_me(bot, update):
@@ -89,6 +88,7 @@ def new_game(bot, update):
         game = gm.new_game(update.message.chat)
         game.starter = update.message.from_user
         game.owner.append(update.message.from_user.id)
+        game.mode = DEFAULT_GAMEMODE
         send_async(bot, chat_id,
                    text=_("Created a new game! Join the game with /join "
                           "and start the game with /start"))
@@ -296,10 +296,10 @@ def start_game(bot, update, args, job_queue):
         if game.started:
             send_async(bot, chat.id, text=_("The game has already started"))
 
-        elif len(game.players) < 2:
+        elif len(game.players) < MIN_PLAYERS:
             send_async(bot, chat.id,
-                       text=_("At least two players must /join the game "
-                              "before you can start it"))
+                       text=__("At least {minplayers} players must /join the game "
+                              "before you can start it").format(minplayers=MIN_PLAYERS))
 
         else:
             # Starting a game
@@ -635,12 +635,12 @@ def reset_waiting_time(bot, player):
     """Resets waiting time for a player and sends a notice to the group"""
     chat = player.game.chat
 
-    if player.waiting_time < 60:
-        player.waiting_time = 60
+    if player.waiting_time < WAITING_TIME:
+        player.waiting_time = WAITING_TIME
         send_async(bot, chat.id,
-                   text=__("Waiting time for {name} has been reset to 60 "
+                   text=__("Waiting time for {name} has been reset to {time} "
                            "seconds", multi=player.game.translate)
-                   .format(name=display_name(player.user)))
+                   .format(name=display_name(player.user), time=WAITING_TIME))
 
 
 # Add all handlers to the dispatcher and run the bot
